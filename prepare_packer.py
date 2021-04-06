@@ -29,7 +29,7 @@ def implement_nanomites(data,index,end_index):
 	return nanomites
 
 
-with open("a.out","rb") as f:
+with open("example_pie","rb") as f:
 	data = bytearray(f.read())
 
 nanomites = []
@@ -41,7 +41,7 @@ for i in range(len(data)):
 		
 print(nanomites)
 	
-with open("output_nano","wb") as f:
+with open("output_nano_pie","wb") as f:
 	f.write(data)
 		
 
