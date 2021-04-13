@@ -3,7 +3,7 @@ import hashlib
 
 
 def encrypt_code(data,encrypted_start):
-	seed = random.randint(0,4294967295)
+	seed = random.randint(0,2147483647)
 	#hashvalue = hashlib.md5(seed.to_bytes(8,"big"))
 	hashvalue = hashlib.md5(str(seed).encode())
 	xor = int.from_bytes(hashvalue.digest()[-8:],"big")
@@ -28,6 +28,13 @@ def implement_nanomites(data,index,end_index):
 		encrypted_start += 16
 	return nanomites
 
+def dump_nanomites(nanomites, filename):
+	with open(filename,"w") as f:
+		length = len(nanomites)
+		f.write(str(length)+"\n")
+		for nanomite in nanomites:
+			f.write(str(nanomite[0])+":"+str(nanomite[1])+"\n")
+
 
 with open("example_pie","rb") as f:
 	data = bytearray(f.read())
@@ -39,7 +46,7 @@ for i in range(len(data)):
 		end_index = index + data[i:].find(b"\x49\xbf\x55\x10\xfe\xca")
 		nanomites.extend(implement_nanomites(data,index,end_index))
 		
-print(nanomites)
+dump_nanomites(nanomites,"nanomites_dump")
 	
 with open("output_nano_pie","wb") as f:
 	f.write(data)

@@ -7,19 +7,26 @@
 #include <string.h>
 #include <stdlib.h>
 
-
-long int get_base_address(int pid) {
+char* get_file_path(int pid) {
 	char pid_str[13];
-	char base_address[12];
 	sprintf(pid_str,"%d",pid);
-	char path[] = "/proc/";
+	char path[30] = "/proc/";
 	strcat(path,pid_str);
 	strcat(path,"/maps");
+	char* memory = (char*)malloc(sizeof(char) * (strlen(path)+1));
+	strcpy(memory,path);
+	return memory;
+}
+
+
+long int get_base_address(int pid) {
+	char base_address[24];
+	char *path = get_file_path(pid);
 	FILE *fp;
 	fp = fopen(path,"r");
-	fgets(base_address, 12 ,fp);
+	fgets(base_address, 20 ,fp);
 	fclose(fp);
-	long int base = (long int)strtol(base_address,NULL,16);
+	long int base = (long int)strtol(strtok(base_address,"-"),NULL,16);
 	return base;
 }
 
