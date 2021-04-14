@@ -15,6 +15,9 @@ int main()
 {
 	__asm__("movq $3405688917, %r15");
 	printf("Test\n");
-	custom_printf("Test2\n");
+	int l = 3;
+	l *= 5;
+	printf("%d\n",l);
 	__asm__("movq $3405647957, %r15");
+	custom_printf("Test2\n");
 }

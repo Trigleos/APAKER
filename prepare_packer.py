@@ -8,10 +8,10 @@ def encrypt_code(data,encrypted_start):
 	hashvalue = hashlib.md5(str(seed).encode())
 	xor = int.from_bytes(hashvalue.digest()[-8:],"big")
 	second_xor = int.from_bytes(data[encrypted_start:encrypted_start+8],"big")
-	print(hex(xor))
-	print(hex(second_xor))
+	print("Normal_code:",hex(second_xor))
 	encrypted_code = second_xor ^ xor
 	encrypted_code = encrypted_code.to_bytes(8,"big")
+	print("Encrypted_code:",encrypted_code.hex())
 	for i in range(8):
 		data[encrypted_start + i] = encrypted_code[i]
 	return (encrypted_start,seed)
@@ -22,6 +22,9 @@ def implement_nanomites(data,index,end_index):
 	available_space = end_index-index-8
 	code_steals = available_space // 16
 	data[index] = 0xcc
+	data[end_index] = 0xcc
+	print(hex(index))
+	print(hex(end_index))
 	encrypted_start = index + 8
 	for i in range(code_steals):
 		nanomites.append(encrypt_code(data,encrypted_start))

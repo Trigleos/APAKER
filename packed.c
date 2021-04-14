@@ -6,6 +6,8 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <openssl/md5.h>
+#include "read_nanomites.h"
 
 char* get_file_path(int pid) {
 	char pid_str[13];
@@ -19,36 +21,84 @@ char* get_file_path(int pid) {
 }
 
 
-long int get_base_address(int pid) {
+unsigned long int get_base_address(int pid) {
 	char base_address[24];
 	char *path = get_file_path(pid);
 	FILE *fp;
 	fp = fopen(path,"r");
 	fgets(base_address, 20 ,fp);
 	fclose(fp);
-	long int base = (long int)strtol(strtok(base_address,"-"),NULL,16);
+	free(path);
+	unsigned long int base = strtoul(strtok(base_address,"-"),NULL,16);
 	return base;
 }
 
+unsigned long int get_end_of_nanomite_section(pid_t child, unsigned long int start_addr) {
+	unsigned long int code;
+	unsigned long int end_addr = 0;
+	char *breakpoint;
+	int offset;
+	char hex_string[17];
+	
+	start_addr += 8;
+	while(end_addr == 0)
+	{
+		code = ptrace(PTRACE_PEEKTEXT, child, start_addr);
+		sprintf(hex_string, "%016lx",code);
+		breakpoint = strstr(hex_string,"cc");
+		if(breakpoint != NULL) 
+		{
+			offset = (unsigned long int)breakpoint - (unsigned long int)hex_string;
+			end_addr = start_addr + (7-offset/2);
+			if(ptrace(PTRACE_PEEKTEXT, child, end_addr) != 0xcafe1055bfcc)
+			{
+				end_addr = 0;
+			}
+		}
+		start_addr += 8;
+	}
+	return end_addr;
+}
 
-long int get_encrypted_code(pid_t child, long int rip_addr) {
-	long int encrypted_code_addr = rip_addr + 7;
-	long int encrypted_code = ptrace(PTRACE_PEEKTEXT,child, encrypted_code_addr, 0);
-	return encrypted_code;
-
+void decrypt_code(pid_t child, unsigned long int start_addr, unsigned long int base, struct packed_file packed)
+{
+	unsigned long int encrypted_code, md5_xor, decrypted_code;
+	unsigned char md5_hash[17];
+	char seed_string[17];
+	char md5_turned[17];
+	unsigned int seed;
+	unsigned long int end_addr = get_end_of_nanomite_section(child,start_addr);
+	int code_steals = (end_addr-start_addr-8)/16;
+	start_addr += 8;
+	for(int i=0;i<code_steals;i++)
+	{
+		encrypted_code = ptrace(PTRACE_PEEKTEXT, child, start_addr);
+		seed = get_seed(start_addr-base,packed);
+		sprintf(seed_string,"%d",seed);
+		MD5(seed_string,strlen(seed_string),md5_hash);
+		for(int i2 = 15; i2 > 7; i2--)
+			sprintf((md5_turned+(15-i2)*2),"%02x", md5_hash[i2]);
+		md5_xor = strtoul(md5_turned,NULL,16);
+		decrypted_code = encrypted_code ^ md5_xor;
+		ptrace(PTRACE_POKETEXT, child, start_addr, decrypted_code);
+		start_addr += 16;
+	}
 }
 
 
 void tracer(pid_t child){
 	struct user_regs_struct regs;
 	int seed, status;
-	long int rip_addr,base;
+	unsigned long int rip_addr,base;
+	unsigned long int start_addr;
 	waitpid(child,NULL, 0);
 	base = get_base_address((int)child);
-	printf("Baseaddress:%lx\n",base);
 	ptrace(PTRACE_CONT, child, NULL, NULL);
 	
-	for(int i=0;i<3;i++) {
+	struct packed_file packed = read_in_nanomites("nanomites_dump");
+	
+	
+	while(1) {
 		status = 0;
 		waitpid(child,&status, 0);
 		
@@ -57,18 +107,29 @@ void tracer(pid_t child){
 		}
 		
 		ptrace(PTRACE_GETREGS, child, NULL,&regs);
-		rip_addr = regs.rip;
-		printf("%lx\n", rip_addr);
+		rip_addr = regs.rip-1;
+		unsigned long int code;
+		code = ptrace(PTRACE_PEEKTEXT, child, rip_addr,0);
 		
-		long int code;
-		code = ptrace(PTRACE_PEEKTEXT, child, rip_addr-1,0);
-		printf("%lx\n" , code);
-		
-		long int encrypted_code = get_encrypted_code(child, rip_addr);
-		
-		printf("%lx\n" , encrypted_code);
-		
-		/*seed = retrieve_nanomites(child,addr)*/
+		if(code == 0xcafeb055bfcc)
+		{
+			start_addr = rip_addr;
+			printf("Decrypt\n");
+			decrypt_code(child, rip_addr,base,packed);
+			regs.rip = start_addr+10;
+			ptrace(PTRACE_SETREGS, child, NULL, &regs);
+		}
+		else if (code == 0xcafe1055bfcc)
+		{
+			printf("Encrypt\n");
+			regs.rip = rip_addr+10;
+			ptrace(PTRACE_SETREGS, child, NULL, &regs);
+		}
+		else
+		{
+			printf("Fail\n");
+			exit(-1);
+		}
 		ptrace(PTRACE_CONT, child, NULL, NULL);
 		
 	}

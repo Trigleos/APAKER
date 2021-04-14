@@ -48,7 +48,7 @@ int get_seed(int offset, struct packed_file packed)
 	return -1;
 }
 
-
+/*
 int main()
 {
 	struct packed_file packed = read_in_nanomites("nanomites_dump");
@@ -56,3 +56,4 @@ int main()
 	int seed = get_seed(4552,packed);
 	printf("%d\n",seed);
 }
+*/
