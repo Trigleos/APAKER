@@ -9,7 +9,7 @@
 #include <stdlib.h>
 #include <openssl/md5.h>
 #include "read_nanomites.h"
-#include "nanomites_output.h"
+#include "nanomites_encrypted.h"
 
 char* get_file_path(int pid) {		//construct filepath to /proc/[pid]/maps
 	char pid_str[13];
@@ -137,7 +137,7 @@ void tracer(pid_t child){
 	
 	base = get_base_address((int)child);		//get base address of child process
 	
-	struct packed_file packed = read_in_nanomites("nanomites_dump");	//read in nanomites details from nanomites_dump file created by the preparation python script
+	struct packed_file packed = read_in_nanomites();	//read in nanomites details from nanomites_dump file created by the preparation python script
 	
 	
 	for (int i=0;i<3;i++) {
@@ -172,13 +172,13 @@ void tracer(pid_t child){
 	
 }
 
-void write_nanomites_file()
+void write_nanomites_file()		//write unsigned char array that represents ELF to file so it can be executed
 {
 	FILE *fp;
 	fp = fopen("child_elf","wb");
-	fwrite(nanomites_output,1,nanomites_output_len,fp);
+	fwrite(resc_nanomites_encrypted,1,resc_nanomites_encrypted_len,fp);
 	fclose(fp);
-	chmod("child_elf",0777);
+	chmod("child_elf",0777);	//make file executable
 }
 
 int main()
@@ -193,7 +193,7 @@ int main()
 	else 
 	{
 		tracer(child);		//parent traces child
-		remove("child_elf");
+		remove("child_elf");	//remove child file after execution has finished
 	}
 	return 0;
 }

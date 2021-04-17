@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "nanomite_dump.h"
+#include "nanomites_dump.h"
 
 //used to parse nanomites_dump file
 
@@ -17,16 +17,16 @@ struct packed_file {	//struct that contains every nanomite in the encrypted ELF
 
 
 
-struct packed_file read_in_nanomites(char* filename)		//creates packed_file struct from nanomites_dump file
+struct packed_file read_in_nanomites()		//creates packed_file struct from nanomites_dump file
 {
 	FILE *fp;
 	int number_of_nanomites;
 	struct packed_file pf;
 	
-	//fp = fopen(filename,"r");	//read in first line that contains the number of nanomites
-	fp = fmemopen(nanomites_dump,nanomites_dump_len,"r");
+	//fp = fopen(filename,"r");	
+	fp = fmemopen(resc_nanomites_dump,resc_nanomites_dump_len,"r");	//nanomites_dump file is converted into .h file and the unsigned char array is transformed into stream so we can treat it as file
 	char line[256];
-	fgets(line, 255,fp);
+	fgets(line, 255,fp);		//read in first line that contains the number of nanomites
 	pf.number_of_nanomites = atoi(line);
 	
 	pf.nanomites = malloc(pf.number_of_nanomites*sizeof(struct nanomite));  //allocate memory for every nanomite struct

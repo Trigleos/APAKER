@@ -1,5 +1,6 @@
 import random
 import hashlib
+import sys
 
 
 def encrypt_code(data,encrypted_start):	#encrypt 8 bytes of our source ELF
@@ -51,11 +52,15 @@ def add_nanomites(input_filename,output_filename):  #top level function that rea
 			end_index = index + data[i:].find(b"\x49\xbf\x55\x10\xfe\xca")	#Search corresponding nanomite end marker
 			nanomites.extend(implement_nanomites(data,index,end_index))	#implement nanomite section
 			
-	dump_nanomites(nanomites,"nanomites_dump")	#dump nanomite details to text file
+	dump_nanomites(nanomites,"resc/nanomites_dump")	#dump nanomite details to text file
 		
 	with open(output_filename,"wb") as f:	#Output ELF containing nanomites
 		f.write(data)
-		
-add_nanomites("example_pie","nanomites_output")
+
+
+if len(sys.argv) < 2:
+	print("Please provide the name of the ELF file you want to add the nanomites to as an argument")
+else:		
+	add_nanomites(sys.argv[1],"resc/nanomites_encrypted")
 		
 

@@ -1,5 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
+//nanomite section start marker: __asm__("movq $3405688917, %r15");
+//nanomite section end marker: __asm__("movq $3405647957, %r15");
+
 
 
 int custom_printf(char* input)
