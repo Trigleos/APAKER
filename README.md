@@ -22,6 +22,7 @@ C: __asm__("movq $3405647957, %r15");
 However, there are a few rules on how you can layout these sections.
 ### Rules
 Rule 1: Keep nanomites section inside a single function. While you can add as many sections as you want, you need to make sure they all stay within a single function. This is due to the fact that the code inside a nanomite section needs to be adjacent.
+
 What doesn't work:
 ```C
 int random_function() {
@@ -53,6 +54,7 @@ int main() {
 }
 ```
 Rule 2: Make sure the start marker and end marker are placed in a way that the code flow can reach both of them.
+
 What doesn't work:
 ```C
 int  first_function()  {  
@@ -96,6 +98,7 @@ void second_function(int y) {
 }
 ```
 Rule 3: Make sure you close a section logically before opening a new one.
+
 What doesn't work:
 ```C
 int random_function() {
